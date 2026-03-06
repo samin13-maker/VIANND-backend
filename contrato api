@@ -1,0 +1,1207 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Viannd API",
+    "description": "API REST para la aplicación móvil Viannd — seguimiento alimenticio diario. Permite gestionar usuarios, alimentos, registros de comidas, reportes semanales y recordatorios.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Equipo Viannd"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Servidor local de desarrollo"
+    },
+    {
+      "url": "https://api.viannd.com/api/v1",
+      "description": "Servidor de producción (AWS)"
+    }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Registro e inicio de sesión de usuarios" },
+    { "name": "Usuarios", "description": "Perfil y datos personales del usuario" },
+    { "name": "Categorias", "description": "Categorías de alimentos" },
+    { "name": "Alimentos", "description": "Catálogo de alimentos y sus macronutrientes" },
+    { "name": "Platillos", "description": "Platillos compuestos por múltiples alimentos" },
+    { "name": "TipoComida", "description": "Tipos de comida del día (Desayuno, Comida, Cena, Colación)" },
+    { "name": "RegistroComida", "description": "Registro diario de comidas del usuario" },
+    { "name": "RegistroAlimento", "description": "Alimentos dentro de un registro de comida" },
+    { "name": "RegistroDia", "description": "Seguimiento diario y racha del usuario" },
+    { "name": "ReporteSemanal", "description": "Reportes semanales generados automáticamente" },
+    { "name": "Recordatorios", "description": "Recordatorios personalizados por tipo de comida" }
+  ],
+  "paths": {
+
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Registrar nuevo usuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" },
+              "example": {
+                "email": "andrea@gmail.com",
+                "contrasena": "Segura123!",
+                "nombre": "Andrea Cisneros",
+                "edad": 22,
+                "genero": "mujer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Iniciar sesión",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "example": {
+                "email": "andrea@gmail.com",
+                "contrasena": "Segura123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión iniciada exitosamente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/usuarios/me": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Obtener perfil del usuario autenticado",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Perfil del usuario",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Usuario" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Usuarios"],
+        "summary": "Actualizar datos personales del usuario",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateUsuarioRequest" },
+              "example": {
+                "nombre": "Ana Carmen",
+                "edad": 23,
+                "genero": "mujer",
+                "modo_oscuro": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuario actualizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Usuario" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/categorias": {
+      "get": {
+        "tags": ["Categorias"],
+        "summary": "Listar todas las categorías de alimentos",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de categorías",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/CategoriaAlimento" }
+                    }
+                  }
+                },
+                "example": {
+                  "data": [
+                    { "id_categoria": 1, "nombre": "Carne" },
+                    { "id_categoria": 2, "nombre": "Fruta" },
+                    { "id_categoria": 3, "nombre": "Verdura" },
+                    { "id_categoria": 4, "nombre": "Lácteos" },
+                    { "id_categoria": 5, "nombre": "Cereales" },
+                    { "id_categoria": 6, "nombre": "Leguminosas" },
+                    { "id_categoria": 7, "nombre": "Tubérculos" },
+                    { "id_categoria": 8, "nombre": "Carnes frías" }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/alimentos": {
+      "get": {
+        "tags": ["Alimentos"],
+        "summary": "Listar alimentos con filtros y paginación",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "nombre",
+            "in": "query",
+            "description": "Filtrar por nombre (búsqueda parcial)",
+            "schema": { "type": "string" },
+            "example": "pollo"
+          },
+          {
+            "name": "id_categoria",
+            "in": "query",
+            "description": "Filtrar por categoría",
+            "schema": { "type": "integer" },
+            "example": 1
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número de página (paginación)",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Resultados por página",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de alimentos",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AlimentosPaginados" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/alimentos/{id_alimento}": {
+      "get": {
+        "tags": ["Alimentos"],
+        "summary": "Obtener detalle de un alimento",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_alimento" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del alimento",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Alimento" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/platillos": {
+      "get": {
+        "tags": ["Platillos"],
+        "summary": "Listar platillos del usuario autenticado",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de platillos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Platillo" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Platillos"],
+        "summary": "Crear un platillo personalizado",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePlatilloRequest" },
+              "example": {
+                "nombre": "Pollo con arroz",
+                "alimentos": [
+                  { "id_alimento": 10, "cantidad": 150 },
+                  { "id_alimento": 3, "cantidad": 100 }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Platillo creado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Platillo" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/tipos-comida": {
+      "get": {
+        "tags": ["TipoComida"],
+        "summary": "Listar tipos de comida del día",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de tipos de comida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TipoComida" }
+                    }
+                  }
+                },
+                "example": {
+                  "data": [
+                    { "id_tipo_comida": 1, "nombre": "Desayuno" },
+                    { "id_tipo_comida": 2, "nombre": "Comida" },
+                    { "id_tipo_comida": 3, "nombre": "Cena" },
+                    { "id_tipo_comida": 4, "nombre": "Colación" }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/registros-comida": {
+      "get": {
+        "tags": ["RegistroComida"],
+        "summary": "Listar registros de comida del usuario con filtros",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "fecha",
+            "in": "query",
+            "description": "Filtrar por fecha exacta (YYYY-MM-DD)",
+            "schema": { "type": "string", "format": "date" },
+            "example": "2026-03-04"
+          },
+          {
+            "name": "fecha_inicio",
+            "in": "query",
+            "description": "Rango: fecha de inicio",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "fecha_fin",
+            "in": "query",
+            "description": "Rango: fecha de fin",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "id_tipo_comida",
+            "in": "query",
+            "description": "Filtrar por tipo de comida",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "fuera_dieta",
+            "in": "query",
+            "description": "Filtrar solo alimentos fuera de la dieta",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de registros de comida",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegistroComidaPaginado" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["RegistroComida"],
+        "summary": "Crear un nuevo registro de comida",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRegistroComidaRequest" },
+              "example": {
+                "fecha": "2026-03-04",
+                "hora_registro": "13:15:00",
+                "id_tipo_comida": 2,
+                "fuera_dieta": false,
+                "completado": false,
+                "id_dia": 5,
+                "alimentos": [
+                  { "id_alimento": 10, "cantidad": 150 },
+                  { "id_alimento": 3, "cantidad": 100 }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registro creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegistroComida" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/registros-comida/{id_registro}": {
+      "get": {
+        "tags": ["RegistroComida"],
+        "summary": "Obtener un registro de comida por ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_registro" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del registro",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegistroComida" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["RegistroComida"],
+        "summary": "Actualizar un registro de comida",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_registro" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateRegistroComidaRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registro actualizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegistroComida" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["RegistroComida"],
+        "summary": "Eliminar un registro de comida",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_registro" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registro eliminado",
+            "content": {
+              "application/json": {
+                "example": { "message": "Registro eliminado correctamente" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/registros-comida/{id_registro}/completar": {
+      "patch": {
+        "tags": ["RegistroComida"],
+        "summary": "Marcar un registro de comida como completado",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_registro" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registro marcado como completado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id_registro": 12,
+                  "completado": true
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/registros-dia": {
+      "get": {
+        "tags": ["RegistroDia"],
+        "summary": "Obtener registros diarios del usuario (racha)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "fecha_inicio",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "fecha_fin",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de registros diarios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/RegistroDia" }
+                    },
+                    "racha_actual": { "type": "integer", "example": 6 }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/registros-dia/hoy": {
+      "get": {
+        "tags": ["RegistroDia"],
+        "summary": "Obtener el resumen del día actual",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Resumen del día actual",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RegistroDia" },
+                "example": {
+                  "id_dia": 15,
+                  "id_usuario": 1,
+                  "fecha": "2026-03-04",
+                  "dia_completado": false
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/reportes-semanales": {
+      "get": {
+        "tags": ["ReporteSemanal"],
+        "summary": "Listar reportes semanales del usuario con paginación",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de reportes semanales",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReportesPaginados" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/reportes-semanales/{id_reporte}": {
+      "get": {
+        "tags": ["ReporteSemanal"],
+        "summary": "Obtener un reporte semanal por ID",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_reporte" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reporte semanal detallado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReporteSemanal" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/reportes-semanales/generar": {
+      "post": {
+        "tags": ["ReporteSemanal"],
+        "summary": "Generar el reporte de la semana actual",
+        "description": "Calcula y persiste el reporte semanal basado en los registros de la semana en curso.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "201": {
+            "description": "Reporte generado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReporteSemanal" }
+              }
+            }
+          },
+          "400": {
+            "description": "Ya existe un reporte para esta semana",
+            "content": {
+              "application/json": {
+                "example": { "error": "Ya existe un reporte para la semana actual" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/recordatorios": {
+      "get": {
+        "tags": ["Recordatorios"],
+        "summary": "Listar recordatorios del usuario",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de recordatorios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Recordatorio" }
+                    }
+                  }
+                },
+                "example": {
+                  "data": [
+                    { "id_recordatorio": 1, "id_tipo_comida": 1, "hora": "08:00:00", "activo": true },
+                    { "id_recordatorio": 2, "id_tipo_comida": 2, "hora": "14:00:00", "activo": true },
+                    { "id_recordatorio": 3, "id_tipo_comida": 3, "hora": "20:00:00", "activo": true },
+                    { "id_recordatorio": 4, "id_tipo_comida": 4, "hora": null, "activo": false }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Recordatorios"],
+        "summary": "Crear un recordatorio",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRecordatorioRequest" },
+              "example": {
+                "id_tipo_comida": 1,
+                "hora": "08:00:00",
+                "activo": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Recordatorio creado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Recordatorio" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/recordatorios/{id_recordatorio}": {
+      "put": {
+        "tags": ["Recordatorios"],
+        "summary": "Actualizar hora de un recordatorio",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_recordatorio" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hora": { "type": "string", "format": "time", "example": "09:00:00" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recordatorio actualizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Recordatorio" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Recordatorios"],
+        "summary": "Activar o desactivar un recordatorio",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id_recordatorio" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["activo"],
+                "properties": {
+                  "activo": { "type": "boolean", "example": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado del recordatorio actualizado",
+            "content": {
+              "application/json": {
+                "example": { "id_recordatorio": 1, "activo": false }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+
+  },
+
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtenido en /auth/login o /auth/register"
+      }
+    },
+
+    "parameters": {
+      "id_alimento": {
+        "name": "id_alimento",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "example": 5
+      },
+      "id_registro": {
+        "name": "id_registro",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "example": 12
+      },
+      "id_reporte": {
+        "name": "id_reporte",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "example": 3
+      },
+      "id_recordatorio": {
+        "name": "id_recordatorio",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "example": 1
+      }
+    },
+
+    "schemas": {
+
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "contrasena", "nombre", "edad", "genero"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "contrasena": { "type": "string", "minLength": 8 },
+          "nombre": { "type": "string" },
+          "edad": { "type": "integer", "minimum": 1 },
+          "genero": { "type": "string", "enum": ["mujer", "hombre", "otro"] }
+        }
+      },
+
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "contrasena"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "contrasena": { "type": "string" }
+        }
+      },
+
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+          "usuario": { "$ref": "#/components/schemas/Usuario" }
+        }
+      },
+
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id_usuario": { "type": "integer", "example": 1 },
+          "nombre": { "type": "string", "example": "Kelly Anahi" },
+          "email": { "type": "string", "format": "email", "example": "kelly@gmail.com" },
+          "edad": { "type": "integer", "example": 23 },
+          "genero": { "type": "string", "enum": ["mujer", "hombre", "otro"] },
+          "fecha_registro": { "type": "string", "format": "date", "example": "2026-02-18" },
+          "modo_oscuro": { "type": "boolean", "example": false }
+        }
+      },
+
+      "UpdateUsuarioRequest": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" },
+          "edad": { "type": "integer" },
+          "genero": { "type": "string", "enum": ["mujer", "hombre", "otro"] },
+          "modo_oscuro": { "type": "boolean" }
+        }
+      },
+
+      "CategoriaAlimento": {
+        "type": "object",
+        "properties": {
+          "id_categoria": { "type": "integer", "example": 1 },
+          "nombre": { "type": "string", "example": "Carne" }
+        }
+      },
+
+      "Alimento": {
+        "type": "object",
+        "properties": {
+          "id_alimento": { "type": "integer", "example": 10 },
+          "nombre": { "type": "string", "example": "Pechuga de pollo" },
+          "id_categoria": { "type": "integer", "example": 1 },
+          "categoria": { "type": "string", "example": "Carne" },
+          "calorias": { "type": "number", "format": "float", "example": 165.0, "description": "kcal por 100g" },
+          "proteinas": { "type": "number", "format": "float", "example": 31.0 },
+          "carbohidratos": { "type": "number", "format": "float", "example": 0.0 },
+          "grasas": { "type": "number", "format": "float", "example": 3.6 }
+        }
+      },
+
+      "AlimentoPorcion": {
+        "type": "object",
+        "properties": {
+          "id_alimento": { "type": "integer", "example": 10 },
+          "nombre": { "type": "string", "example": "Pechuga de pollo" },
+          "cantidad": { "type": "number", "format": "float", "example": 150 },
+          "calorias_calculadas": { "type": "number", "format": "float", "example": 247.5 },
+          "proteinas_calculadas": { "type": "number", "format": "float", "example": 46.5 },
+          "carbohidratos_calculados": { "type": "number", "format": "float", "example": 0.0 },
+          "grasas_calculadas": { "type": "number", "format": "float", "example": 5.4 }
+        }
+      },
+
+      "AlimentosPaginados": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Alimento" }
+          },
+          "pagination": { "$ref": "#/components/schemas/Pagination" }
+        }
+      },
+
+      "Platillo": {
+        "type": "object",
+        "properties": {
+          "id_platillo": { "type": "integer", "example": 3 },
+          "nombre": { "type": "string", "example": "Pollo con arroz" },
+          "id_usuario": { "type": "integer", "example": 1 },
+          "alimentos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AlimentoPorcion" }
+          },
+          "total_calorias": { "type": "number", "format": "float", "example": 339.0 }
+        }
+      },
+
+      "CreatePlatilloRequest": {
+        "type": "object",
+        "required": ["nombre", "alimentos"],
+        "properties": {
+          "nombre": { "type": "string" },
+          "alimentos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id_alimento", "cantidad"],
+              "properties": {
+                "id_alimento": { "type": "integer" },
+                "cantidad": { "type": "number", "format": "float", "description": "Cantidad en gramos" }
+              }
+            }
+          }
+        }
+      },
+
+      "TipoComida": {
+        "type": "object",
+        "properties": {
+          "id_tipo_comida": { "type": "integer", "example": 1 },
+          "nombre": { "type": "string", "example": "Desayuno" }
+        }
+      },
+
+      "RegistroComida": {
+        "type": "object",
+        "properties": {
+          "id_registro": { "type": "integer", "example": 12 },
+          "id_usuario": { "type": "integer", "example": 1 },
+          "fecha": { "type": "string", "format": "date", "example": "2026-03-04" },
+          "hora_registro": { "type": "string", "example": "13:15:00" },
+          "id_tipo_comida": { "type": "integer", "example": 2 },
+          "tipo_comida": { "type": "string", "example": "Comida" },
+          "fuera_dieta": { "type": "boolean", "example": false },
+          "completado": { "type": "boolean", "example": true },
+          "id_dia": { "type": "integer", "example": 5 },
+          "alimentos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AlimentoPorcion" }
+          },
+          "total_calorias": { "type": "number", "format": "float", "example": 580.0 }
+        }
+      },
+
+      "CreateRegistroComidaRequest": {
+        "type": "object",
+        "required": ["fecha", "hora_registro", "id_tipo_comida", "fuera_dieta"],
+        "properties": {
+          "fecha": { "type": "string", "format": "date" },
+          "hora_registro": { "type": "string", "example": "13:15:00" },
+          "id_tipo_comida": { "type": "integer" },
+          "fuera_dieta": { "type": "boolean" },
+          "completado": { "type": "boolean", "default": false },
+          "id_dia": { "type": "integer", "nullable": true },
+          "alimentos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id_alimento", "cantidad"],
+              "properties": {
+                "id_alimento": { "type": "integer" },
+                "cantidad": { "type": "number", "format": "float" }
+              }
+            }
+          }
+        }
+      },
+
+      "UpdateRegistroComidaRequest": {
+        "type": "object",
+        "properties": {
+          "hora_registro": { "type": "string" },
+          "completado": { "type": "boolean" },
+          "alimentos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id_alimento": { "type": "integer" },
+                "cantidad": { "type": "number", "format": "float" }
+              }
+            }
+          }
+        }
+      },
+
+      "RegistroComidaPaginado": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RegistroComida" }
+          },
+          "pagination": { "$ref": "#/components/schemas/Pagination" }
+        }
+      },
+
+      "RegistroDia": {
+        "type": "object",
+        "properties": {
+          "id_dia": { "type": "integer", "example": 15 },
+          "id_usuario": { "type": "integer", "example": 1 },
+          "fecha": { "type": "string", "format": "date", "example": "2026-03-04" },
+          "dia_completado": { "type": "boolean", "example": false }
+        }
+      },
+
+      "ReporteSemanal": {
+        "type": "object",
+        "properties": {
+          "id_reporte": { "type": "integer", "example": 3 },
+          "id_usuario": { "type": "integer", "example": 1 },
+          "semana_inicio": { "type": "string", "format": "date", "example": "2026-03-02" },
+          "semana_fin": { "type": "string", "format": "date", "example": "2026-03-08" },
+          "calorias_promedio": { "type": "number", "format": "float", "example": 1540.0 },
+          "proteinas_total": { "type": "number", "format": "float", "example": 28.0 },
+          "carbohidratos_total": { "type": "number", "format": "float", "example": 35.0 },
+          "grasas_total": { "type": "number", "format": "float", "example": 8.0 },
+          "porcentaje_cumplimiento": { "type": "number", "format": "float", "example": 85.0 },
+          "alimentos_extra": { "type": "integer", "example": 8 }
+        }
+      },
+
+      "ReportesPaginados": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReporteSemanal" }
+          },
+          "pagination": { "$ref": "#/components/schemas/Pagination" }
+        }
+      },
+
+      "Recordatorio": {
+        "type": "object",
+        "properties": {
+          "id_recordatorio": { "type": "integer", "example": 1 },
+          "id_usuario": { "type": "integer", "example": 1 },
+          "id_tipo_comida": { "type": "integer", "example": 1 },
+          "tipo_comida": { "type": "string", "example": "Desayuno" },
+          "hora": { "type": "string", "nullable": true, "example": "08:00:00" },
+          "activo": { "type": "boolean", "example": true }
+        }
+      },
+
+      "CreateRecordatorioRequest": {
+        "type": "object",
+        "required": ["id_tipo_comida", "activo"],
+        "properties": {
+          "id_tipo_comida": { "type": "integer" },
+          "hora": { "type": "string", "nullable": true, "example": "08:00:00" },
+          "activo": { "type": "boolean" }
+        }
+      },
+
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer", "example": 1 },
+          "limit": { "type": "integer", "example": 20 },
+          "total": { "type": "integer", "example": 85 },
+          "total_pages": { "type": "integer", "example": 5 }
+        }
+      },
+
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Descripción del error" },
+          "code": { "type": "integer", "example": 400 }
+        }
+      }
+    },
+
+    "responses": {
+      "BadRequest": {
+        "description": "Datos inválidos o faltantes (400)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "error": "El campo email es requerido", "code": 400 }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Token inválido o no proporcionado (401)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "error": "Token inválido o expirado", "code": 401 }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso no encontrado (404)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "error": "Recurso no encontrado", "code": 404 }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflicto con datos existentes (409)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": { "error": "El email ya está registrado", "code": 409 }
+          }
+        }
+      }
+    }
+  }
+}
