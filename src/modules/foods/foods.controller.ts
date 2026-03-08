@@ -1,32 +1,47 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { searchFoods, getFoodById, getFoodsByCategory } from "./foods.service";
 
-export const searchFoodController = async (req: Request, res: Response) => {
-
- const { query } = req.query as { query: string };
-
- const foods = await searchFoods(query);
-
- res.json(foods);
-
+export const searchFoodController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { query } = req.query as { query: string };
+    if (!query) {
+      return res.status(400).json({ message: "El parámetro query es requerido" });
+    }
+    const foods = await searchFoods(query);
+    res.json(foods);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getFoodController = async (req: Request, res: Response) => {
-
- const { id } = req.params as {id: string};
-
- const food = await getFoodById(id);
-
- res.json(food);
-
+export const getFoodController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = String(req.params.id);
+    const food = await getFoodById(id);
+    res.json(food);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getCategoryController = async (req: Request, res: Response) => {
-
- const { category } = req.params as {category: string};
-
- const foods = await getFoodsByCategory(category);
-
- res.json(foods);
-
+export const getCategoryController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const category = String (req.params.category);
+    const foods = await getFoodsByCategory(category);
+    res.json(foods);
+  } catch (error) {
+    next(error);
+  }
 };

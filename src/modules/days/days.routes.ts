@@ -1,16 +1,15 @@
 import { Router } from "express";
 import {
- createDayController,
- getDaysController,
- completeDayController
+  createDayController,
+  getDaysController,
+  completeDayController,
 } from "./days.controller";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 
 const router = Router();
 
-router.post("/", createDayController);
-
-router.get("/user/:userId", getDaysController);
-
-router.patch("/:id/complete", completeDayController);
+router.post("/", authMiddleware, createDayController);
+router.get("/user/:userId", authMiddleware, getDaysController);
+router.patch("/:id/complete", authMiddleware, completeDayController);
 
 export default router;

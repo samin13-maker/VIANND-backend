@@ -1,12 +1,13 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { generateWeeklyReport } from "./reports.service";
 
-export const weeklyReportController = (req: Request, res: Response) => {
-
- const userId = Number(req.params.userId);
-
- const report = generateWeeklyReport(userId);
-
- res.json(report);
-
+export const weeklyReportController = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = Number(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "userId debe ser un número" });
+    const report = await generateWeeklyReport(userId);
+    res.json(report);
+  } catch (error) {
+    next(error);
+  }
 };

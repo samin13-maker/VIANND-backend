@@ -1,11 +1,13 @@
 export interface Food {
 
- id: number;
- name: string;
+ id: number
+ name: string
 
- calories: number;
- protein: number;
- fat: number;
- carbs: number;
+ calories: number
+ protein: number
+ carbs: number
+ fat: number
+
+ category: string
 
 }

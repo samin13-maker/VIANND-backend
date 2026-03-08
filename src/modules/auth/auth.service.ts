@@ -1,55 +1,33 @@
-import { hashPassword, comparePassword } from "../../utils/password";
+import { comparePassword } from "../../utils/password";
 import { generateToken } from "../../utils/jwt";
-import { getAllUsers, createUser } from "../users/users.service";
+import { getUserByEmail, createUser } from "../users/users.service";
 
 export const registerUser = async (data: any) => {
+  const { email, password, name, age, gender } = data;
 
- const { email, password, name, age, gender } = data;
+  const existingUser = await getUserByEmail(email);
 
- const users = getAllUsers();
+  if (existingUser) {
+    throw Object.assign(new Error("El usuario ya existe"), { status: 409 });
+  }
 
- const existingUser = users.find(u => u.email === email);
-
- if (existingUser) {
-  throw new Error("User already exists");
- }
-
- const hashedPassword = await hashPassword(password);
-
- const newUser = createUser({
-  email,
-  password: hashedPassword,
-  name,
-  age,
-  gender
- });
-
- return newUser;
-
+  const newUser = await createUser({ email, password, name, age, gender });
+  return newUser;
 };
 
-
 export const loginUser = async (email: string, password: string) => {
+  const user = await getUserByEmail(email);
 
- const users = getAllUsers();
+  if (!user) {
+    throw Object.assign(new Error("Credenciales inválidas"), { status: 401 });
+  }
 
- const user = users.find(u => u.email === email);
+  const validPassword = await comparePassword(password, user.password);
 
- if (!user) {
-  throw new Error("Invalid credentials");
- }
+  if (!validPassword) {
+    throw Object.assign(new Error("Credenciales inválidas"), { status: 401 });
+  }
 
- const validPassword = await comparePassword(password, user.password);
-
- if (!validPassword) {
-  throw new Error("Invalid credentials");
- }
-
- const token = generateToken(user.id);
-
- return {
-  token,
-  user
- };
-
+  const token = generateToken(user.id);
+  return { token, user };
 };

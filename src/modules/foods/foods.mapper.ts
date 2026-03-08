@@ -1,13 +1,12 @@
 import { extractNutrients } from "../../utils/nutritionExtractor";
 
 export const mapFoodDetail = (food: any) => {
+  const nutrientList = food.foodNutrients ?? [];
+  const nutrients = extractNutrients(nutrientList);
 
- const nutrients = extractNutrients(food.foodNutrients);
-
- return {
-  id: food.fdcId,
-  name: food.description,
-  ...nutrients
- };
-
+  return {
+    id: food.fdcId,
+    name: food.description,
+    ...nutrients,
+  };
 };

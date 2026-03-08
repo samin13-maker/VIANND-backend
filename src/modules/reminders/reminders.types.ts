@@ -1,9 +1,7 @@
 export interface Reminder {
-
- id: number
- userId: number
- message: string
- time: string
- active: boolean
-
+  id: number;
+  userId: number;
+  mealType: number;
+  time: string;
+  active: boolean;
 }
