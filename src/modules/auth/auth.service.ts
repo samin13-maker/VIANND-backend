@@ -11,8 +11,11 @@ export const registerUser = async (data: any) => {
     throw Object.assign(new Error("El usuario ya existe"), { status: 409 });
   }
 
-  const newUser = await createUser({ email, password, name, age, gender });
-  return newUser;
+   const newUser = await createUser({ email, password, name, age, gender });
+
+   const token = generateToken(newUser.id);
+
+   return { token, user: newUser };
 };
 
 export const loginUser = async (email: string, password: string) => {

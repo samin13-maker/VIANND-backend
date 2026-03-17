@@ -3,7 +3,7 @@ import { config } from "../../config/env";
 import { pool } from "../../config/database";
 import { FOOD_CATEGORIES } from "../../utils/categories";
 import { mapFoodDetail } from "./foods.mapper";
-
+//import { Meal } from "./meals.types";
 const BASE_URL = "https://api.nal.usda.gov/fdc/v1";
 
 
@@ -66,7 +66,7 @@ export const getFoodById = async (id: string) => {
 };
 
 export const getFoodsByCategory = async (category: string) => {
-  const query = FOOD_CATEGORIES[category as keyof typeof FOOD_CATEGORIES];
+   const query = category;//FOOD_CATEGORIES[category as keyof typeof FOOD_CATEGORIES];
 
   if (!query && category !== "todo") {
     throw Object.assign(new Error("Categoría no válida"), { status: 400 });
@@ -81,4 +81,18 @@ export const getFoodsByCategory = async (category: string) => {
   });
 
   return response.data.foods.map((food: any) => mapFoodDetail(food));
+};
+
+export const getCategories = async () => {
+   const result = await pool.query(
+      `SELECT
+            c.id_categoria,
+            c.nombre,
+            e.nombre_api
+      FROM categoria_alimento c
+      JOIN categoria_api_equivalencia e
+      ON e.id_categoria = c.id_categoria;`
+   );
+
+   return result.rows;
 };

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { searchFoods, getFoodById, getFoodsByCategory } from "./foods.service";
+import { searchFoods, getFoodById, getFoodsByCategory, getCategories } from "./foods.service";
 
 export const searchFoodController = async (
   req: Request,
@@ -44,4 +44,13 @@ export const getCategoryController = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const getCategoriesListController = async (req: Request, res: Response) => {
+   try {
+      const categories = await getCategories();
+      res.json(categories);
+   } catch (error) {
+      res.status(500).json({ message: "Error obteniendo categorías" });
+   }
 };

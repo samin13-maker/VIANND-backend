@@ -3,8 +3,14 @@ import { loginUser, registerUser } from "./auth.service";
 import { mapUserResponse } from "../users/users.mapper";
 
 export const registerController = async (req: Request, res: Response) => {
- const user = await registerUser(req.body);
- res.status(201).json(user);
+
+   const { token, user } = await registerUser(req.body);
+
+   res.status(201).json({
+      token,
+      user: mapUserResponse(user)
+   });
+
 };
 
 export const loginController = async (req: Request, res: Response) => {

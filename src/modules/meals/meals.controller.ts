@@ -1,17 +1,63 @@
 import { Request, Response, NextFunction } from "express";
-import { createMeal, getMealsByUser, getMealsByDay, deleteMeal } from "./meals.service";
+import { createMeal, getMealsByUser, getMealsByDay, deleteMeal, getMealsByUserAndDate } from "./meals.service";
 
 export const createMealController = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userId, foodId, quantity, mealType, date, time, outsideDiet, completed, dayId } = req.body;
+     const {
+        userId,
+        foodId,
+        name,
+        calories,
+        protein,
+        fat,
+        carbs,
+        quantity,
+        mealType,
+        date,
+        time,
+        outsideDiet,
+        completed,
+        dayId
+     } = req.body;
+
     if (!userId || !mealType || !date || !time) {
       return res.status(400).json({ message: "Faltan campos requeridos: userId, mealType, date, time" });
     }
-    const meal = await createMeal({ userId, foodId, quantity, mealType, date, time, outsideDiet, completed, dayId });
+     const meal = await createMeal({
+        userId,
+        foodId,
+        name,
+        calories,
+        protein,
+        fat,
+        carbs,
+        quantity,
+        mealType,
+        date,
+        time,
+        outsideDiet,
+        completed,
+        dayId
+     });
+
     res.status(201).json(meal);
   } catch (error) {
     next(error);
   }
+};
+
+export const getMealsByUserAndDateController = async (req: Request, res: Response, next: NextFunction) => {
+   try {
+      const userId = Number(req.params.userId);
+      const { date } = req.query;
+
+      if (isNaN(userId)) return res.status(400).json({ message: "userId debe ser un número" });
+      if (!date || typeof date !== "string") return res.status(400).json({ message: "El parámetro 'date' es requerido (YYYY-MM-DD)" });
+
+      res.json(await getMealsByUserAndDate(userId, date));
+   } catch (error) {
+      next(error);
+   }
 };
 
 export const getMealsByUserController = async (req: Request, res: Response, next: NextFunction) => {
