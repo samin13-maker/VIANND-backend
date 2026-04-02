@@ -1,36 +1,131 @@
 import { comparePassword } from "../../utils/password";
 import { generateToken } from "../../utils/jwt";
 import { getUserByEmail, createUser } from "../users/users.service";
+import { saveCode, verifyCode, canRequestCode } from "../../utils/verification-store";
+//import { sendVerificationCode } from "../../utils/email";
 
-export const registerUser = async (data: any) => {
-  const { email, password, name, age, gender } = data;
+export const sendEmailVerification = async (data: any) => {
+   const { email } = data;
 
-  const existingUser = await getUserByEmail(email);
+   if (!email) {
+      throw Object.assign(new Error("email es requerido"), { status: 400 });
+   }
 
-  if (existingUser) {
-    throw Object.assign(new Error("El usuario ya existe"), { status: 409 });
-  }
+   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+   if (!emailRegex.test(email)) {
+      throw Object.assign(new Error("Formato de email inválido"), { status: 400 });
+   }
+
+   const cooldown = canRequestCode(email);
+   if (!cooldown.allowed) {
+      throw Object.assign(
+         new Error(`Debes esperar ${cooldown.waitMinutes} minutos para solicitar un nuevo código`),
+         { status: 429 }
+      );
+   }
+
+   const existingEmail = await getUserByEmail(email);
+   if (existingEmail) {
+      throw Object.assign(new Error("Este correo ya está registrado"), { status: 409 });
+   }
+
+   const code = "123456"; // Math.floor(100000 + Math.random() * 900000).toString();
+   saveCode(email, code);
+   // await sendVerificationCode(email, code);
+};
+
+export const verifyAndRegister = async (data: any) => {
+   const { email, code, name, password, age, gender } = data;
+
+   if (!email || !code || !name || !password || !age || !gender) {
+      throw Object.assign(new Error("Todos los campos son requeridos"), { status: 400 });
+   }
+
+   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+   if (!emailRegex.test(email)) {
+      throw Object.assign(new Error("Formato de email inválido"), { status: 400 });
+   }
+
+   if (name.length < 2 || name.length > 50) {
+      throw Object.assign(
+         new Error("El nombre mín. 2 y máx. 50 carácteres"),
+         { status: 400 }
+      );
+   }
+
+   if (password.length < 6 || password.length > 50) {
+      throw Object.assign(
+         new Error("Contraseña mín. 6 y máx. 50 carácteres"),
+         { status: 400 }
+      );
+   }
+
+   const parsedAge = Number(age);
+
+   if (!Number.isInteger(parsedAge) || parsedAge < 18 || parsedAge > 120) {
+      throw Object.assign(
+         new Error("Edad incorrecta. mín. 18 y máx. 120 años"),
+         { status: 400 }
+      );
+   }
+
+   const validGenders = ['Hombre', 'Mujer', 'Otro'];
+
+   if (!validGenders.includes(gender)) {
+      throw Object.assign(
+         new Error("Genero incorrecto. Hombre||Mujer||Otro " + gender),
+         { status: 400 }
+      );
+   }
+
+   if (!verifyCode(email, code)) {
+      throw Object.assign(
+         new Error(
+            "Código inválido o expirado. " +
+            "NOTA: El envío de correos está en modo simulación, el código NO llega al correo real. " +
+            "Para completar el registro sigue estos pasos: " +
+            "1) Primero llama al endpoint POST /auth/send-code con tu correo (esto activa la simulación y guarda el código en memoria). " +
+            "2) Ingresa el código de simulación: '123456'. " +
+            "3) Completa el registro con todos tus datos en POST /auth/register. " +
+            "IMPORTANTE: Si no llamas primero a /send-code, el código '123456' no funcionará aunque sea correcto."
+         ),
+         { status: 400 }
+      );
+   }
 
    const newUser = await createUser({ email, password, name, age, gender });
-
    const token = generateToken(newUser.id);
+   return { token, user: newUser };
+};
 
+export const registerUser = async (data: any) => {
+   const { email, password, name, age, gender } = data;
+
+   const existingUser = await getUserByEmail(email);
+   if (existingUser) {
+      throw Object.assign(new Error("El correo ya existe"), { status: 409 });
+   }
+
+   const newUser = await createUser({ email, password, name, age, gender });
+   const token = generateToken(newUser.id);
    return { token, user: newUser };
 };
 
 export const loginUser = async (email: string, password: string) => {
-  const user = await getUserByEmail(email);
+   if (!email || !password) {
+      throw Object.assign(new Error("email y password son requeridos"), { status: 400 });
+   }
 
-  if (!user) {
-    throw Object.assign(new Error("Credenciales inválidas"), { status: 401 });
-  }
+   const user = await getUserByEmail(email);
+   if (!user) {
+      throw Object.assign(new Error("Credenciales inválidas"), { status: 401 });
+   }
 
-  const validPassword = await comparePassword(password, user.password);
+   const validPassword = await comparePassword(password, user.password);
+   if (!validPassword) {
+      throw Object.assign(new Error("Credenciales inválidas"), { status: 401 });
+   }
 
-  if (!validPassword) {
-    throw Object.assign(new Error("Credenciales inválidas"), { status: 401 });
-  }
-
-  const token = generateToken(user.id);
-  return { token, user };
+   const token = generateToken(user.id);
+   return { token, user };
 };
